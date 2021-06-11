@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import numpy as np
 import datetime as datetime
+import matplotlib.pyplot as plt
 
 # Setup working directory and relative filepaths
 current_dir = os.curdir
@@ -85,8 +86,40 @@ abc_data_df['time_posted'] = [i.time() for i in abc_data_df['posted_at']]
 abc_data_df.drop(columns=['posted_at'], inplace=True)
 print(abc_data_df)
 
+# Barchart of post_type count
+chart1 = plt.figure(1)
+objects = post_types_unique
+y_pos = np.arange(len(objects))
+performance = abc_data_df['post_category'].value_counts()
+plt.bar(y_pos, performance, align='center', alpha=0.5)
+plt.xticks(y_pos, objects)
+plt.ylabel('Count')
+plt.title('Facebook ABC News Post: Post Type Comparison')
+
+# Barchart of status_type count
+chart2 = plt.figure(2)
+objects = status_types_unique
+objects.append('na')
+y_pos = np.arange(len(objects))
+performance = abc_data_df['status_category'].value_counts()
+plt.bar(y_pos, performance, align='center', alpha=0.5)
+plt.xticks(y_pos, objects)
+plt.ylabel('Count')
+plt.title('Facebook ABC News: Status Type Comparison')
+
+
+# Total reacts over time
+chart = plt.figure(3)
+time_reacts = pd.Series(data=abc_data_df['total_reacts'].values, index=abc_data_df['date_posted'])
+time_reacts.plot(figsize=(16,4), color='r')
+plt.ylabel('Total Reacts')
+plt.xlabel('Date')
+plt.title('Facebook ABC News Post: Total ABC Post Reacts Between 2012 and 2016')
+
+plt.show()
+
 # Export dataframe as csv to data_clean
-abc_data_df.to_csv(os.path.join(output_dir, 'abc_data_clean.csv'), index=False)
+# abc_data_df.to_csv(os.path.join(output_dir, 'abc_data_clean.csv'), index=False)
 
 # ToDo: 
     # Create Class to clean all dataframes at once
