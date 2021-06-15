@@ -3,6 +3,8 @@ import pandas as pd
 import numpy as np
 import datetime as datetime
 import matplotlib.pyplot as plt
+from textblob import TextBlob
+from textblob.sentiments import NaiveBayesAnalyzer
 
 # Setup working directory and relative filepaths
 current_dir = os.curdir
@@ -28,7 +30,8 @@ cbs_data_df = pd.DataFrame(cbs_data_csv.copy())
 cnn_data_df = pd.DataFrame(cnn_data_csv.copy())
 
 # Remove columns from Dataframe
-col_ls = ['id', 'page_id', 'name', 'message', 'description', 'caption', 'picture']
+#'name'
+col_ls = ['id', 'page_id', 'message', 'description', 'caption', 'picture']
 abc_data_df.drop(columns = col_ls, inplace = True)
 bbc_data_df.drop(columns = col_ls, inplace = True)
 cbs_data_df.drop(columns = col_ls, inplace = True)
@@ -84,7 +87,25 @@ abc_data_df['posted_at'] = abc_data_df['posted_at'].apply(round_hour)
 abc_data_df['date_posted'] = [i.date() for i in abc_data_df['posted_at']]
 abc_data_df['time_posted'] = [i.time() for i in abc_data_df['posted_at']]
 abc_data_df.drop(columns=['posted_at'], inplace=True)
-print(abc_data_df)
+
+# Define function to determine sentiment of abc_data_df['name']
+def analyze_sentiment(headline):
+    analysis = TextBlob(str(headline))
+    return analysis.sentiment # returns sentiment, subjectivity
+
+    # if analysis.sentiment.polarity > 0: # positive sentiment
+    #     return 'positive'
+    # elif analysis.sentiment.polarity == 0: # neutral sentiment
+    #     return 'neutral'
+    # else:   # negative sentiment
+    #     return 'negative'
+
+# Create new column on abc_data_df called 'Sentiment' and store sentiment values using analyze_sentiment method
+abc_data_df[['name_sentiment', 'name_subjectivity']] = np.array([analyze_sentiment(str(headline)) for headline in abc_data_df['name']])
+print(abc_data_df.tail(15))
+
+# Export dataframe as csv to data_clean
+# abc_data_df.to_csv(os.path.join(output_dir, 'abc_data_clean.csv'), index=False)
 
 # Barchart of post_type count
 chart1 = plt.figure(1)
@@ -107,7 +128,6 @@ plt.xticks(y_pos, objects)
 plt.ylabel('Count')
 plt.title('Facebook ABC News: Status Type Comparison')
 
-
 # Total reacts over time
 chart = plt.figure(3)
 time_reacts = pd.Series(data=abc_data_df['total_reacts'].values, index=abc_data_df['date_posted'])
@@ -116,10 +136,15 @@ plt.ylabel('Total Reacts')
 plt.xlabel('Date')
 plt.title('Facebook ABC News Post: Total ABC Post Reacts Between 2012 and 2016')
 
-plt.show()
+# Total comments over time
+chart = plt.figure(4)
+time_comments = pd.Series(data=abc_data_df['comments_count'].values, index=abc_data_df['date_posted'])
+time_comments.plot(figsize=(16,4), color='b')
+plt.ylabel('Total Comments')
+plt.xlabel('Date')
+plt.title('Facebook ABC News Post: Total ABC Post Comments Between 2012 and 2016')
 
-# Export dataframe as csv to data_clean
-# abc_data_df.to_csv(os.path.join(output_dir, 'abc_data_clean.csv'), index=False)
+plt.show()
 
 # ToDo: 
     # Create Class to clean all dataframes at once
