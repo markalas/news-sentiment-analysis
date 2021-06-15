@@ -3,6 +3,7 @@ import pandas as pd
 import numpy as np
 import datetime as datetime
 import matplotlib.pyplot as plt
+import seaborn as sns
 from textblob import TextBlob
 from textblob.sentiments import NaiveBayesAnalyzer
 
@@ -137,7 +138,16 @@ plt.ylabel('Total Comments')
 plt.xlabel('Date')
 plt.title('Facebook ABC News Post: Total ABC Post Comments Between 2012 and 2016')
 
-plt.show()
+# Scatter plot of x=sentiment y=name_subjectivity
+# Store name_sentiment and name_subjectivity to an array
+# Sample data n=1000
+chart = plt.figure(5)
+abc_data_sample = abc_data_df.sample(1000)
+x_sentimentArray = abc_data_sample['name_sentiment'].to_numpy()
+y_subjectivityArray = abc_data_sample['name_subjectivity'].to_numpy()
+plt.scatter(x_sentimentArray, y_subjectivityArray, s=2)
+
+# plt.show()
 
 # ToDo: 
     # Create Class to clean all dataframes at once
