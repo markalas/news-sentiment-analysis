@@ -93,13 +93,6 @@ def analyze_sentiment(headline):
     analysis = TextBlob(str(headline))
     return analysis.sentiment # returns sentiment, subjectivity
 
-    # if analysis.sentiment.polarity > 0: # positive sentiment
-    #     return 'positive'
-    # elif analysis.sentiment.polarity == 0: # neutral sentiment
-    #     return 'neutral'
-    # else:   # negative sentiment
-    #     return 'negative'
-
 # Create new column on abc_data_df called 'Sentiment' and store sentiment values using analyze_sentiment method
 abc_data_df[['name_sentiment', 'name_subjectivity']] = np.array([analyze_sentiment(str(headline)) for headline in abc_data_df['name']])
 print(abc_data_df.tail(15))
