@@ -5,7 +5,6 @@ import datetime as datetime
 import matplotlib.pyplot as plt
 import seaborn as sns
 from textblob import TextBlob
-from textblob.sentiments import NaiveBayesAnalyzer
 
 # Setup working directory and relative filepaths
 current_dir = os.curdir
@@ -112,60 +111,79 @@ class CleanData:
         self.df['status_type'] = self.df['status_type'].fillna(self.df.mode().iloc[0][2]) # self.df.mode().iloc[0] returns a list of the most frequent values for each column in self.df iloc[0][2] accesses status_type
         return self.df
 
-# ABC Data cleaning
-abc_data_clean = CleanData(abc_data_df)
-abc_data_clean.fill_na()
-abc_data_clean.news_outlet(outlet='ABC')
-abc_data_clean.calculate_reacts()
-abc_data_clean.clean_datetime()
-abc_data_clean.analyze_df()
-abc_data_clean = abc_data_clean.show_df()
-print(abc_data_clean.dtypes)
-print(abc_data_clean)
+if __name__ == '__main__':
 
-# BBC Data cleaning
-bbc_data_clean = CleanData(bbc_data_df)
-bbc_data_clean.fill_na()
-bbc_data_clean.news_outlet(outlet='BBC')
-bbc_data_clean.calculate_reacts()
-bbc_data_clean.clean_datetime()
-bbc_data_clean.analyze_df()
-bbc_data_clean = bbc_data_clean.show_df()
+    # ABC Data cleaning
+    abc_data_clean = CleanData(abc_data_df)
+    abc_data_clean.fill_na()
+    abc_data_clean.news_outlet(outlet='ABC')
+    abc_data_clean.calculate_reacts()
+    abc_data_clean.clean_datetime()
+    abc_data_clean.analyze_df()
+    abc_data_clean = abc_data_clean.show_df()
 
-# CBS Data cleaning
-cbs_data_clean = CleanData(cbs_data_df)
-cbs_data_clean.fill_na()
-cbs_data_clean.news_outlet(outlet='CBS')
-cbs_data_clean.calculate_reacts()
-cbs_data_clean.clean_datetime()
-cbs_data_clean.analyze_df()
-cbs_data_clean = cbs_data_clean.show_df()
+    # BBC Data cleaning
+    bbc_data_clean = CleanData(bbc_data_df)
+    bbc_data_clean.fill_na()
+    bbc_data_clean.news_outlet(outlet='BBC')
+    bbc_data_clean.calculate_reacts()
+    bbc_data_clean.clean_datetime()
+    bbc_data_clean.analyze_df()
+    bbc_data_clean = bbc_data_clean.show_df()
 
-# CNN Data cleaning
-cnn_data_clean = CleanData(cnn_data_df)
-cnn_data_clean.fill_na()
-cnn_data_clean.news_outlet(outlet='CNN')
-cnn_data_clean.calculate_reacts()
-cnn_data_clean.clean_datetime()
-cnn_data_clean.analyze_df()
-cnn_data_clean = cnn_data_clean.show_df()
+    # CBS Data cleaning
+    cbs_data_clean = CleanData(cbs_data_df)
+    cbs_data_clean.fill_na()
+    cbs_data_clean.news_outlet(outlet='CBS')
+    cbs_data_clean.calculate_reacts()
+    cbs_data_clean.clean_datetime()
+    cbs_data_clean.analyze_df()
+    cbs_data_clean = cbs_data_clean.show_df()
 
-# Combine news outlet and store in new dataframe 
+    # CNN Data cleaning
+    cnn_data_clean = CleanData(cnn_data_df)
+    cnn_data_clean.fill_na()
+    cnn_data_clean.news_outlet(outlet='CNN')
+    cnn_data_clean.calculate_reacts()
+    cnn_data_clean.clean_datetime()
+    cnn_data_clean.analyze_df()
+    cnn_data_clean = cnn_data_clean.show_df()
 
-# Plot BBC Data
-chart1 = plt.figure(1)
-objects = pd.unique(bbc_data_clean['post_type'])
-x_pos = np.arange(len(objects))
-performance = bbc_data_clean['post_type'].value_counts()
-plt.bar(x_pos, performance, align='center', alpha=0.5)
-plt.xticks(x_pos, objects)
-  
-# Show sentiment density using seaborn
-chart = plt.figure('CNN')
-sentiment_density = sns.kdeplot(data=cnn_data_clean, y='name_subjectivity', x='name_sentiment', fill=True)
-sentiment_density.set(xlabel='Polarity', ylabel='Subjectivity', title='Sentiment Density Map of CNN News Headlines')
+    # Combine news outlet and store in new dataframe
+    news_data_combined_df = pd.concat([abc_data_clean, bbc_data_clean, cbs_data_clean, cnn_data_clean])
 
-plt.show()
+    # export
+
+    # Plot BBC Data
+    chart1 = plt.figure(1)
+    objects = pd.unique(bbc_data_clean['post_type'])
+    x_pos = np.arange(len(objects))
+    performance = bbc_data_clean['post_type'].value_counts()
+    plt.bar(x_pos, performance, align='center', alpha=0.5)
+    plt.xticks(x_pos, objects)
+    
+    # Show sentiment density using seaborn
+    chart = plt.figure('ABC')
+    sentiment_density = sns.kdeplot(data=abc_data_clean, y='name_subjectivity', x='name_sentiment', fill=True)
+    sentiment_density.set(xlabel='Polarity', ylabel='Subjectivity', title='Sentiment Density Map of ABC News Headlines')
+
+    chart = plt.figure('BBC')
+    sentiment_density = sns.kdeplot(data=bbc_data_clean, y='name_subjectivity', x='name_sentiment', fill=True)
+    sentiment_density.set(xlabel='Polarity', ylabel='Subjectivity', title='Sentiment Density Map of BBC News Headlines')
+
+    chart = plt.figure('CBS')
+    sentiment_density = sns.kdeplot(data=cbs_data_clean, y='name_subjectivity', x='name_sentiment', fill=True)
+    sentiment_density.set(xlabel='Polarity', ylabel='Subjectivity', title='Sentiment Density Map of CBS News Headlines')
+
+    chart = plt.figure('CNN')
+    sentiment_density = sns.kdeplot(data=cnn_data_clean, y='name_subjectivity', x='name_sentiment', fill=True)
+    sentiment_density.set(xlabel='Polarity', ylabel='Subjectivity', title='Sentiment Density Map of CNN News Headlines')
+
+    chart = plt.figure('Combined Outlets')
+    sentiment_density = sns.kdeplot(data=news_data_combined_df, y='name_subjectivity', x='name_sentiment', hue='news_outlet' , fill=False)
+    sentiment_density.set(xlabel='Polarity', ylabel='Subjectivity', title='Sentiment Density Map of All Outlets News Headlines')
+
+    plt.show()
 
 # ToDo
     # Clean data with CleanData class
