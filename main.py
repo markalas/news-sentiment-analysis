@@ -32,7 +32,7 @@ cbs_data_df = pd.DataFrame(cbs_data_csv.copy())
 cnn_data_df = pd.DataFrame(cnn_data_csv.copy())
 
 # Remove columns from Dataframe
-col_ls = ['id', 'page_id', 'message', 'description', 'caption', 'picture']
+col_ls = ['id', 'page_id', 'caption', 'picture']
 abc_data_df.drop(columns = col_ls, inplace = True)
 bbc_data_df.drop(columns = col_ls, inplace = True)
 cbs_data_df.drop(columns = col_ls, inplace = True)
@@ -117,13 +117,16 @@ class CleanData:
 
         def remove_punct(text):
             text = ''.join([char for char in str(text) if char not in string.punctuation]) # remove punction from string
-            text = ''.join([char if ord(char) < 128 else '' for char in text]) # join character only if unicode value is less than 128
+            text = ''.join([char if ord(char) < 128 else ' ' for char in text]) # join character only if unicode value is less than 128
             text = re.sub('[0-9]+', '', text) # replace numbers with empty string
             return text
         
         self.df['name_processed'] = self.df['name'].apply(remove_punct)
+        self.df['message_processed'] = self.df['message'].apply(remove_punct)
+        self.df['description_processed'] = self.df['description'].apply(remove_punct)
 
         return self.df
+        
 if __name__ == '__main__':
 
     # ABC Data cleaning
@@ -164,43 +167,20 @@ if __name__ == '__main__':
 
     # Combine news outlet and store in new dataframe
     news_data_combined_df = pd.concat([abc_data_clean, bbc_data_clean, cbs_data_clean, cnn_data_clean])
+    news_data_combined_clean = CleanData(news_data_combined_df)
+    news_data_combined_clean.process_text()
+    news_data_combined_clean = news_data_combined_clean.show_df()
 
-    # export
-
-    # Plot BBC Data
-    chart1 = plt.figure(1)
-    objects = pd.unique(bbc_data_clean['post_type'])
-    x_pos = np.arange(len(objects))
-    performance = bbc_data_clean['post_type'].value_counts()
-    plt.bar(x_pos, performance, align='center', alpha=0.5)
-    plt.xticks(x_pos, objects)
-    
-    # Show sentiment density using seaborn
-    chart = plt.figure('ABC')
-    sentiment_density = sns.kdeplot(data=abc_data_clean, y='name_subjectivity', x='name_sentiment', fill=True)
-    sentiment_density.set(xlabel='Polarity', ylabel='Subjectivity', title='Sentiment Density Map of ABC News Headlines')
-
-    chart = plt.figure('BBC')
-    sentiment_density = sns.kdeplot(data=bbc_data_clean, y='name_subjectivity', x='name_sentiment', fill=True)
-    sentiment_density.set(xlabel='Polarity', ylabel='Subjectivity', title='Sentiment Density Map of BBC News Headlines')
-
-    chart = plt.figure('CBS')
-    sentiment_density = sns.kdeplot(data=cbs_data_clean, y='name_subjectivity', x='name_sentiment', fill=True)
-    sentiment_density.set(xlabel='Polarity', ylabel='Subjectivity', title='Sentiment Density Map of CBS News Headlines')
-
-    chart = plt.figure('CNN')
-    sentiment_density = sns.kdeplot(data=cnn_data_clean, y='name_subjectivity', x='name_sentiment', fill=True)
-    sentiment_density.set(xlabel='Polarity', ylabel='Subjectivity', title='Sentiment Density Map of CNN News Headlines')
-
-    chart = plt.figure('Combined Outlets')
-    sentiment_density = sns.kdeplot(data=news_data_combined_df, y='name_subjectivity', x='name_sentiment', hue='news_outlet' , fill=False)
-    sentiment_density.set(xlabel='Polarity', ylabel='Subjectivity', title='Sentiment Density Map of All Outlets News Headlines')
-
-    plt.show()
-
+    # Melt columns 
+    news_data_text_pivot = news_data_combined_clean[['name_processed','message_processed', 'description_processed','news_outlet']].copy() # create a copy of df 
+    news_data_text_pivot['news_outlet'] = news_data_text_pivot['news_outlet'].str.cat(map(str, news_data_text_pivot.index), sep='_') # add incrementing int to end of string
+    news_data_text_pivot = news_data_text_pivot.rename(columns={'name_processed':'A1','message_processed':'A2', 'description_processed':'A3'}) # rename columns before pivot .wide_to_long
+    news_data_text_pivot = pd.wide_to_long(news_data_text_pivot, stubnames=['A'], i=['news_outlet'], j='drop').reset_index().drop('drop', 1) # combining name, message, description to one column
+    news_data_text_pivot.dropna(how='any',axis=0,inplace=True)
+    print(news_data_text_pivot)
+   
 # ToDo
     # Pivot dataframe by name, message, description
-    # Plot sentiment density map for each New Outlet
-    # Plot combined sentiment density map
+    # Clean combined df further before NLP
     
     
