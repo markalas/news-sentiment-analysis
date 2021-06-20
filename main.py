@@ -1,4 +1,5 @@
 import os
+from nltk.tree import Tree
 import pandas as pd
 import numpy as np
 import datetime as datetime
@@ -9,7 +10,9 @@ import re
 from textblob import TextBlob
 from nltk.corpus import stopwords
 import nltk as nltk
+import time
 
+start_time = time.time()
 
 # Setup working directory and relative filepaths
 current_dir = os.curdir
@@ -182,22 +185,23 @@ if __name__ == '__main__':
     news_headlines = news_data_text_pivot[news_data_text_pivot['A'].str.contains('nan')==False]
 
     # Remove nan and empty rows
-    news_headlines = news_headlines.dropna()
+    news_headlines = news_headlines.copy()
+    news_headlines['A'] = news_headlines['A'].replace(r'^\s*$', np.nan, regex=True)
+    news_headlines = news_headlines.dropna(axis=0, how='any')
+    print(news_headlines)
 
     # Tokenize
     def tokenize_text(text):  
         text_token = TextBlob(text)
         return text_token.words
-
-    news_headlines['A'] = news_headlines['A'].apply(tokenize_text) 
+    # news_headlines['A'] = news_headlines['A'].apply(tokenize_text) 
 
     # Define method to remove stopwords using nltk stopwords
     stop_words = stopwords.words('english')
     def remove_stopwords(text):
         text = [word for word in text if word not in stop_words]
         return text
-    news_headlines['A'] = news_headlines['A'].apply(remove_stopwords)
-    print(news_headlines)
+    # news_headlines['A'] = news_headlines['A'].apply(remove_stopwords)
 
     # Join tokenized text to form sentence
 
@@ -206,4 +210,5 @@ if __name__ == '__main__':
 # ToDo
     # Remove nan/empty rows > tokenize > remove stopwords
     
-    
+    run_time = time.time() - start_time
+    print(f'{str(run_time/60)} minute(s)')
