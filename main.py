@@ -7,6 +7,9 @@ import seaborn as sns
 import string
 import re
 from textblob import TextBlob
+from nltk.corpus import stopwords
+import nltk as nltk
+
 
 # Setup working directory and relative filepaths
 current_dir = os.curdir
@@ -39,7 +42,7 @@ cbs_data_df.drop(columns = col_ls, inplace = True)
 cnn_data_df.drop(columns = col_ls, inplace = True)
 
 class CleanData:
-    def __init__(self, df): # initialize CleanData
+    def __init__(self, df): # constructor for df
         self.df = df
 
     def show_df(self): # Show dateframe object when passed to CleanData
@@ -115,15 +118,15 @@ class CleanData:
     
     def process_text(self):
 
-        def remove_punct(text):
+        def clean_text(text):
             text = ''.join([char for char in str(text) if char not in string.punctuation]) # remove punction from string
             text = ''.join([char if ord(char) < 128 else ' ' for char in text]) # join character only if unicode value is less than 128
             text = re.sub('[0-9]+', '', text) # replace numbers with empty string
             return text
         
-        self.df['name_processed'] = self.df['name'].apply(remove_punct)
-        self.df['message_processed'] = self.df['message'].apply(remove_punct)
-        self.df['description_processed'] = self.df['description'].apply(remove_punct)
+        self.df['name_processed'] = self.df['name'].apply(clean_text)
+        self.df['message_processed'] = self.df['message'].apply(clean_text)
+        self.df['description_processed'] = self.df['description'].apply(clean_text)
 
         return self.df
         
@@ -175,12 +178,32 @@ if __name__ == '__main__':
     news_data_text_pivot = news_data_combined_clean[['name_processed','message_processed', 'description_processed','news_outlet']].copy() # create a copy of df 
     news_data_text_pivot['news_outlet'] = news_data_text_pivot['news_outlet'].str.cat(map(str, news_data_text_pivot.index), sep='_') # add incrementing int to end of string
     news_data_text_pivot = news_data_text_pivot.rename(columns={'name_processed':'A1','message_processed':'A2', 'description_processed':'A3'}) # rename columns before pivot .wide_to_long
-    news_data_text_pivot = pd.wide_to_long(news_data_text_pivot, stubnames=['A'], i=['news_outlet'], j='drop').reset_index().drop('drop', 1) # combining name, message, description to one column
-    news_data_text_pivot.dropna(how='any',axis=0,inplace=True)
-    print(news_data_text_pivot)
-   
+    news_data_text_pivot = pd.wide_to_long(news_data_text_pivot, stubnames=['A'], i=['news_outlet'], j='drop').reset_index().drop('drop', 1) # combining name, message, description to one column      
+    news_headlines = news_data_text_pivot[news_data_text_pivot['A'].str.contains('nan')==False]
+
+    # Remove nan and empty rows
+    news_headlines = news_headlines.dropna()
+
+    # Tokenize
+    def tokenize_text(text):  
+        text_token = TextBlob(text)
+        return text_token.words
+
+    news_headlines['A'] = news_headlines['A'].apply(tokenize_text) 
+
+    # Define method to remove stopwords using nltk stopwords
+    stop_words = stopwords.words('english')
+    def remove_stopwords(text):
+        text = [word for word in text if word not in stop_words]
+        return text
+    news_headlines['A'] = news_headlines['A'].apply(remove_stopwords)
+    print(news_headlines)
+
+    # Join tokenized text to form sentence
+
+    # Sentiment Analysis
+
 # ToDo
-    # Pivot dataframe by name, message, description
-    # Clean combined df further before NLP
+    # Remove nan/empty rows > tokenize > remove stopwords
     
     
