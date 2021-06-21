@@ -105,6 +105,7 @@ class CleanData:
 
         return self.df
     
+    
     def analyze_df(self):
 
         def analyze_sentiment(headline):
@@ -122,8 +123,9 @@ class CleanData:
     def process_text(self):
 
         def clean_text(text):
+            text = re.sub('(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)', '', str(text)) # remove links
             text = ''.join([char for char in str(text) if char not in string.punctuation]) # remove punction from string
-            text = ''.join([char if ord(char) < 128 else ' ' for char in text]) # join character only if unicode value is less than 128
+            text = ''.join([char if ord(char) < 128 else '' for char in text]) # join character only if unicode value is less than 128
             text = re.sub('[0-9]+', '', text) # replace numbers with empty string
             return text
         
@@ -133,6 +135,15 @@ class CleanData:
 
         return self.df
         
+    def form_sentence(self, target_col=''):
+        def sentence(words):
+            words = ' '.join(word for word in words)
+            return words
+
+        self.df[target_col] = self.df[target_col].apply(sentence)
+
+        return self.df
+
 if __name__ == '__main__':
 
     # ABC Data cleaning
@@ -182,33 +193,57 @@ if __name__ == '__main__':
     news_data_text_pivot['news_outlet'] = news_data_text_pivot['news_outlet'].str.cat(map(str, news_data_text_pivot.index), sep='_') # add incrementing int to end of string
     news_data_text_pivot = news_data_text_pivot.rename(columns={'name_processed':'A1','message_processed':'A2', 'description_processed':'A3'}) # rename columns before pivot .wide_to_long
     news_data_text_pivot = pd.wide_to_long(news_data_text_pivot, stubnames=['A'], i=['news_outlet'], j='drop').reset_index().drop('drop', 1) # combining name, message, description to one column      
-    news_headlines = news_data_text_pivot[news_data_text_pivot['A'].str.contains('nan')==False]
+    news_headlines = news_data_text_pivot[news_data_text_pivot['A'].str.contains('nan')==False] # remove rows containing 'nan'
 
     # Remove nan and empty rows
     news_headlines = news_headlines.copy()
-    news_headlines['A'] = news_headlines['A'].replace(r'^\s*$', np.nan, regex=True)
+    news_headlines['A'] = news_headlines['A'].replace(r'^\s*$', np.nan, regex=True) # Replace empty rows containing only whitespace 
     news_headlines = news_headlines.dropna(axis=0, how='any')
-    print(news_headlines)
 
     # Tokenize
     def tokenize_text(text):  
         text_token = TextBlob(text)
         return text_token.words
-    # news_headlines['A'] = news_headlines['A'].apply(tokenize_text) 
+    news_headlines['A'] = news_headlines['A'].apply(tokenize_text) 
 
     # Define method to remove stopwords using nltk stopwords
     stop_words = stopwords.words('english')
     def remove_stopwords(text):
         text = [word for word in text if word not in stop_words]
         return text
-    # news_headlines['A'] = news_headlines['A'].apply(remove_stopwords)
+    news_headlines['A'] = news_headlines['A'].apply(remove_stopwords)
+    print(news_headlines)
 
     # Join tokenized text to form sentence
+    news_headlines = CleanData(news_headlines.copy())
+    news_headlines.form_sentence(target_col='A')
+    news_headlines = news_headlines.show_df()
+    print(news_headlines)
+
+    # Split news_outlet into news_outlet and outlet_id
+    news_headlines[['news_outlet', 'outlet_id']] = news_headlines['news_outlet'].str.split('_', expand=True)
 
     # Sentiment Analysis
+    news_headlines.rename(columns={'A' : 'name'}, inplace=True)
+    news_headlines = CleanData(news_headlines)  
+    news_headlines.analyze_df()
+    news_headlines = news_headlines.show_df()
+    print(news_headlines)
+    plt.figure(1)
+    sns.scatterplot(data=news_headlines, x="name_sentiment", y="name_subjectivity", hue="news_outlet")
 
-# ToDo
-    # Remove nan/empty rows > tokenize > remove stopwords
-    
+    # Get average of sentiment/subjectivity by news_outlet
+    news_outlet_avg_sentiment = news_headlines.groupby(by='news_outlet')[['name_sentiment', 'name_subjectivity']].mean()
+    print(news_outlet_avg_sentiment)
+
+    # Scatter plot
+    plt.figure(2)
+    sns.scatterplot(data=news_outlet_avg_sentiment, x="name_sentiment", y="name_subjectivity", hue="news_outlet")
+    plt.show()
+
+    # Output average sentiment df
+    news_outlet_avg_sentiment.to_csv(os.path.join(output_dir, 'avg_sentiment_output.csv'))
+
+    # Run time
     run_time = time.time() - start_time
     print(f'{str(run_time/60)} minute(s)')
