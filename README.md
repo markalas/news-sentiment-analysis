@@ -5,6 +5,7 @@ The objective of this project is to explore Facebook news post posted by major n
 
 ### Areas to Explore
 - Use ML to predict polarity by year (*in progress*)
+- Explore sentiment where subjectivity and polarity do not equal 0
 
 ## Libaries Used
 - pandas
